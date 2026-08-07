@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  SALES
+  WAREHOUSE
+  ACCOUNTS
+}
+
+enum ChallanStatus {
+  DRAFT
+  CONFIRMED
+}
+
+enum StockMovementType {
+  IN
+  OUT
+}
+
+model User {
+  id       String @id @default(cuid())
+  name     String
+  email    String @unique
+  password String
+  role     Role
+
+  challans  Challan[]
+  movements StockMovement[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Customer {
+  id      String  @id @default(cuid())
+  name    String
+  phone   String?
+  email   String?
+  address String?
+
+  challans  Challan[]
+  followUps FollowUp[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FollowUp {
+  id String @id @default(cuid())
+
+  note String
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model Product {
+  id String @id @default(cuid())
+
+  sku         String  @unique
+  name        String
+  description String?
+  price       Float
+  stock       Int     @default(0)
+
+  challanItems ChallanItem[]
+  movements    StockMovement[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model StockMovement {
+  id String @id @default(cuid())
+
+  type     StockMovementType
+  quantity Int
+  reason   String?
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model Challan {
+  id String @id @default(cuid())
+
+  status ChallanStatus @default(DRAFT)
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id])
+
+  items ChallanItem[]
+
+  totalAmount Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ChallanItem {
+  id String @id @default(cuid())
+
+  challanId String
+  challan   Challan @relation(fields: [challanId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  productName String
+  sku         String
+  price       Float
+  quantity    Int
+  total       Float
+}

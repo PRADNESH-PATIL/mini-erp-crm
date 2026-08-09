@@ -7,6 +7,99 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id        String          @id @default(cuid())
+  name      String
+  email     String          @unique
+  password  String
+  role      Role
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  challans  Challan[]
+  movements StockMovement[]
+}
+
+model Customer {
+  id           String         @id @default(cuid())
+  name         String
+  phone        String?
+  email        String?
+  address      String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  businessName String?
+  customerType CustomerType?
+  followUpDate DateTime?
+  gstNumber    String?
+  status       CustomerStatus @default(LEAD)
+  challans     Challan[]
+  followUps    FollowUp[]
+}
+
+model FollowUp {
+  id         String   @id @default(cuid())
+  note       String
+  customerId String
+  createdAt  DateTime @default(now())
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model Product {
+  id            String          @id @default(cuid())
+  sku           String          @unique
+  name          String
+  description   String?
+  price         Float
+  stock         Int             @default(0)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  category      String?
+  location      String?
+  minStockAlert Int?            @default(0)
+  challanItems  ChallanItem[]
+  movements     StockMovement[]
+}
+
+model StockMovement {
+  id          String            @id @default(cuid())
+  type        StockMovementType
+  quantity    Int
+  reason      String?
+  productId   String
+  createdById String
+  createdAt   DateTime          @default(now())
+  createdBy   User              @relation(fields: [createdById], references: [id])
+  product     Product           @relation(fields: [productId], references: [id])
+}
+
+model Challan {
+  id            String        @id @default(cuid())
+  status        ChallanStatus @default(DRAFT)
+  customerId    String
+  createdById   String
+  totalAmount   Float
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  challanNumber String        @unique
+  totalQuantity Int           @default(0)
+  createdBy     User          @relation(fields: [createdById], references: [id])
+  customer      Customer      @relation(fields: [customerId], references: [id])
+  items         ChallanItem[]
+}
+
+model ChallanItem {
+  id          String  @id @default(cuid())
+  challanId   String
+  productId   String
+  productName String
+  sku         String
+  price       Float
+  quantity    Int
+  total       Float
+  challan     Challan @relation(fields: [challanId], references: [id], onDelete: Cascade)
+  product     Product @relation(fields: [productId], references: [id])
+}
+
 enum Role {
   ADMIN
   SALES
@@ -29,128 +122,10 @@ enum CustomerStatus {
 enum ChallanStatus {
   DRAFT
   CONFIRMED
-  CANCELLED 
+  CANCELLED
 }
 
 enum StockMovementType {
   IN
   OUT
-}
-
-model User {
-  id       String @id @default(cuid())
-  name     String
-  email    String @unique
-  password String
-  role     Role
-
-  challans  Challan[]
-  movements StockMovement[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Customer {
-  id           String  @id @default(cuid())
-  name         String
-  phone        String?
-  email        String?
-  businessName String?
-  gstNumber    String?
-  customerType CustomerType?
-  address      String?
-  status       CustomerStatus @default(LEAD)
-  followUpDate DateTime?
-
-  challans  Challan[]
-  followUps FollowUp[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-} 
-
-model FollowUp {
-  id String @id @default(cuid())
-
-  note String
-
-  customerId String
-  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-}
-
-model Product {
-  id String @id @default(cuid())
-
-  sku           String  @unique
-  name          String
-  description   String?
-  category      String?
-  price         Float
-  stock         Int     @default(0)
-  minStockAlert Int?    @default(0)
-  location      String?
-
-  challanItems ChallanItem[]
-  movements    StockMovement[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model StockMovement {
-  id String @id @default(cuid())
-
-  type     StockMovementType
-  quantity Int
-  reason   String?
-
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
-
-  createdById String
-  createdBy   User   @relation(fields: [createdById], references: [id])
-
-  createdAt DateTime @default(now())
-}
-
-model Challan {
-  id String @id @default(cuid())
-
-  challanNumber String @unique  
-
-  status ChallanStatus @default(DRAFT)
-
-  customerId String
-  customer   Customer @relation(fields: [customerId], references: [id])
-
-  createdById String
-  createdBy   User   @relation(fields: [createdById], references: [id])
-
-  items ChallanItem[]
-
-  totalQuantity Int @default(0)
-
-  totalAmount Float
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model ChallanItem {
-  id String @id @default(cuid())
-
-  challanId String
-  challan   Challan @relation(fields: [challanId], references: [id], onDelete: Cascade)
-
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
-
-  productName String
-  sku         String
-  price       Float
-  quantity    Int
-  total       Float
 }

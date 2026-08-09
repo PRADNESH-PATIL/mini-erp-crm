@@ -14,9 +14,22 @@ enum Role {
   ACCOUNTS
 }
 
+enum CustomerType {
+  RETAIL
+  WHOLESALE
+  DISTRIBUTOR
+}
+
+enum CustomerStatus {
+  LEAD
+  ACTIVE
+  INACTIVE
+}
+
 enum ChallanStatus {
   DRAFT
   CONFIRMED
+  CANCELLED 
 }
 
 enum StockMovementType {
@@ -39,18 +52,23 @@ model User {
 }
 
 model Customer {
-  id      String  @id @default(cuid())
-  name    String
-  phone   String?
-  email   String?
-  address String?
+  id           String  @id @default(cuid())
+  name         String
+  phone        String?
+  email        String?
+  businessName String?
+  gstNumber    String?
+  customerType CustomerType?
+  address      String?
+  status       CustomerStatus @default(LEAD)
+  followUpDate DateTime?
 
   challans  Challan[]
   followUps FollowUp[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
+} 
 
 model FollowUp {
   id String @id @default(cuid())
@@ -66,11 +84,14 @@ model FollowUp {
 model Product {
   id String @id @default(cuid())
 
-  sku         String  @unique
-  name        String
-  description String?
-  price       Float
-  stock       Int     @default(0)
+  sku           String  @unique
+  name          String
+  description   String?
+  category      String?
+  price         Float
+  stock         Int     @default(0)
+  minStockAlert Int?    @default(0)
+  location      String?
 
   challanItems ChallanItem[]
   movements    StockMovement[]
@@ -98,6 +119,8 @@ model StockMovement {
 model Challan {
   id String @id @default(cuid())
 
+  challanNumber String @unique  
+
   status ChallanStatus @default(DRAFT)
 
   customerId String
@@ -107,6 +130,8 @@ model Challan {
   createdBy   User   @relation(fields: [createdById], references: [id])
 
   items ChallanItem[]
+
+  totalQuantity Int @default(0)
 
   totalAmount Float
 
